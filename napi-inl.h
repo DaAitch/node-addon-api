@@ -2527,6 +2527,157 @@ inline Object FunctionReference::New(const std::vector<napi_value>& args) const 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// SharedValueReference class
+////////////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+SharedValueReference<T> SharedValueReference<T>::New(T value) {
+  return SharedValueReference<T>(value.Env(), value);
+}
+
+template <typename T>
+SharedValueReference<T>::SharedValueReference() {}
+
+template <typename T>
+SharedValueReference<T>::SharedValueReference(Env env, T value) : _env(env) {
+  napi_status status;
+  {
+    std::lock_guard<std::mutex> lock(shared_value_reference_mutex);
+    status = napi_create_reference(env, value, 1, &_ref);
+  }
+  NAPI_THROW_IF_FAILED_VOID(env, status);
+}
+
+template <typename T>
+SharedValueReference<T>::~SharedValueReference() {
+  Reset();
+}
+
+template <typename T>
+SharedValueReference<T>::SharedValueReference(const SharedValueReference<T>& rhs) {
+  (*this) = rhs;
+}
+
+template <typename T>
+SharedValueReference<T>& SharedValueReference<T>::operator=(const SharedValueReference<T>& rhs) {
+  if (this == &rhs) {
+    return *this;
+  }
+  
+  Reset();
+
+  if (rhs.IsEmpty()) {
+    return *this;
+  }
+
+  napi_status status;
+  {
+    std::lock_guard<std::mutex> lock(shared_value_reference_mutex);
+    status = napi_reference_ref(rhs._env, rhs._ref, nullptr);
+  }
+
+  if (status != napi_ok) {
+    // we cannot throw from any thread
+    // at least IsEmpty() == true now
+    return *this;
+  }
+
+  _env = rhs._env;
+  _ref = rhs._ref;
+  return *this;
+}
+
+template <typename T>
+SharedValueReference<T>::SharedValueReference(SharedValueReference<T>&& rhs) {
+  (*this) = std::move(rhs);
+}
+
+template <typename T>
+SharedValueReference<T>& SharedValueReference<T>::operator=(SharedValueReference<T>&& rhs) {
+  Reset();
+
+  std::swap(_env, rhs._env);
+  std::swap(_ref, rhs._ref);
+
+  return *this;
+}
+
+template <typename T>
+template <typename T2>
+bool SharedValueReference<T>::operator==(const SharedValueReference<T2>& rhs) const {
+  if (this == &rhs) {
+    return true;
+  }
+
+  return _env == rhs._env && _ref == rhs._ref;
+}
+
+template <typename T>
+template <typename T2>
+bool SharedValueReference<T>::operator!=(const SharedValueReference<T2>& rhs) const {
+  return !((*this) == rhs);
+}
+
+template <typename T>
+bool SharedValueReference<T>::IsEmpty() const {
+  return _ref == nullptr;
+}
+
+template <typename T>
+uint64_t SharedValueReference<T>::RefId() const {
+  return reinterpret_cast<uint64_t>(_ref);
+}
+
+template <typename T>
+T SharedValueReference<T>::Value() const {
+  napi_value result;
+  napi_status status;
+  {
+    std::lock_guard<std::mutex> lock(shared_value_reference_mutex);
+    status = napi_get_reference_value(_env, _ref, &result);
+  }
+
+  if (status != napi_ok) {
+    return T();
+  }
+
+  return T(_env, result);
+}
+
+template <typename T>
+void SharedValueReference<T>::Reset() {
+  ResetMtUnsafeRefcount();
+}
+
+template <typename T>
+int32_t SharedValueReference<T>::ResetMtUnsafeRefcount() {
+  if (!_ref) {
+    return kInvalidRef;
+  }
+
+  napi_status status;
+  uint32_t refcount = 0;
+  {
+    std::lock_guard<std::mutex> lock(shared_value_reference_mutex);
+    status = napi_reference_unref(_env, _ref, &refcount);
+  }
+
+  _env = nullptr;
+  _ref = nullptr;
+
+  if (status != napi_ok) {
+    return kUnrefFailed;
+  }
+
+  return refcount;
+}
+
+template <typename T>
+SharedValueReference<T> MakeShared(T value) {
+  return SharedValueReference<T>::New(value);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // CallbackInfo class
 ////////////////////////////////////////////////////////////////////////////////
 

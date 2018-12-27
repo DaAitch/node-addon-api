@@ -32,6 +32,7 @@ Object InitObject(Env env);
 Object InitObjectDeprecated(Env env);
 #endif // !NODE_ADDON_API_DISABLE_DEPRECATED
 Object InitPromise(Env env);
+Object InitSharedValueReference(Env env);
 Object InitTypedArray(Env env);
 Object InitObjectWrap(Env env);
 Object InitObjectReference(Env env);
@@ -69,6 +70,7 @@ Object Init(Env env, Object exports) {
   exports.Set("object_deprecated", InitObjectDeprecated(env));
 #endif // !NODE_ADDON_API_DISABLE_DEPRECATED
   exports.Set("promise", InitPromise(env));
+  exports.Set("sharedvaluereference", InitSharedValueReference(env));
   exports.Set("typedarray", InitTypedArray(env));
   exports.Set("objectwrap", InitObjectWrap(env));
   exports.Set("objectreference", InitObjectReference(env));

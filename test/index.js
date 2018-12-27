@@ -34,6 +34,7 @@ let testModules = [
   'object/object_deprecated',
   'object/set_property',
   'promise',
+  'sharedvaluereference',
   'typedarray',
   'typedarray-bigint',
   'objectwrap',

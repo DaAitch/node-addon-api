@@ -6,6 +6,7 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
+#include <mutex>
 
 // VS2015 RTM has bugs with constexpr, so require min of VS2015 Update 3 (known good version)
 #if !defined(_MSC_VER) || _MSC_FULL_VER >= 190024210
@@ -1130,6 +1131,74 @@ namespace Napi {
   template <typename T> Reference<T> Persistent(T value);
   ObjectReference Persistent(Object value);
   FunctionReference Persistent(Function value);
+
+  /// Possible return fail-values of `SharedValueReference<T>::Reset()`
+  enum SharedValueReferenceReset {
+    kInvalidRef = -1, ///< ref is nullptr
+    kUnrefFailed = -2 ///< napi unref call failed
+  };
+
+  // Mutex for synchronizing `napi_*_reference_*` calls from SharedValueReference<T>
+  static std::mutex shared_value_reference_mutex;
+
+  /// Holds a reference to a shared value.
+  /// SharedValueReference<T> access at all is not threadsafe! However accessing same underlying
+  /// reference from different SharedValueReference<T> objects from multiple threads is.
+  /// Can only be constructed in node thread, copied or moved from any thread.
+  /// Works well with capturing in lambdas.
+  template <typename T>
+  class SharedValueReference {
+  public:
+    /// Create SharedValueReference<T> from a value.
+    static SharedValueReference<T> New(T value);
+
+  public:
+    SharedValueReference();
+    ~SharedValueReference();
+
+    SharedValueReference(const SharedValueReference&);
+    SharedValueReference& operator=(const SharedValueReference&);
+
+    SharedValueReference(SharedValueReference&&);
+    SharedValueReference& operator=(SharedValueReference&&);
+
+    /// Equal, if underlying reference pointers are equal.
+    template <typename T2>
+    bool operator==(const SharedValueReference<T2>& rhs) const;
+
+    /// Not equal, if underlying reference pointers are different.
+    template <typename T2>
+    bool operator!=(const SharedValueReference<T2>& rhs) const;
+
+  private:
+    SharedValueReference(Env env, T value);
+
+  public:
+    /// Returns whether object holding a reference.
+    bool IsEmpty() const;
+
+    /// Returns reference id. Equal to the underlying `napi_ref` value, but for consistency reasons
+    /// not returned as `napi_ref` to not be used with unsynchronized `napi_*_reference_*` calls.
+    uint64_t RefId() const;
+
+    /// Returns referenced value.
+    /// Only invoke from node thread.
+    T Value() const;
+
+    /// Resets object and unref reference.
+    void Reset();
+
+    /// Resets object and unref reference.
+    /// Invoked outside the node thread may return inconsistent ref counts.
+    int32_t ResetMtUnsafeRefcount();
+
+  private:
+    napi_env _env = nullptr;
+    napi_ref _ref = nullptr;
+  };
+
+  /// Creates SharedValueReference<T> from a value.
+  template <typename T> SharedValueReference<T> MakeShared(T value);
 
   /// A persistent reference to a JavaScript error object. Use of this class depends somewhat
   /// on whether C++ exceptions are enabled at compile time.

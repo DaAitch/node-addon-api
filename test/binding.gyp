@@ -31,6 +31,7 @@
         'object/object.cc',
         'object/set_property.cc',
         'promise.cc',
+        'sharedvaluereference.cc',
         'typedarray.cc',
         'objectwrap.cc',
         'objectreference.cc',
