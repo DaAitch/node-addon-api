@@ -1,6 +1,8 @@
 #ifndef SRC_NAPI_H_
 #define SRC_NAPI_H_
 
+#define NAPI_VERSION_EXPERIMENTAL 2147483647
+
 #include "node_api.h"
 #include <functional>
 #include <initializer_list>
@@ -54,9 +56,9 @@ namespace Napi {
   class Number;
 // currently experimental guard with version of NAPI_VERSION that it is
 // released in once it is no longer experimental
-#if (NAPI_VERSION > 2147483646)
+#if (NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL)
   class BigInt;
-#endif  // NAPI_EXPERIMENTAL
+#endif  // NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL
   class String;
   class Object;
   class Array;
@@ -79,10 +81,10 @@ namespace Napi {
   typedef TypedArrayOf<double> Float64Array;  ///< Typed-array of 64-bit floating-point values
 // currently experimental guard with version of NAPI_VERSION that it is
 // released in once it is no longer experimental
-#if (NAPI_VERSION > 2147483646)
+#if (NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL)
   typedef TypedArrayOf<int64_t> BigInt64Array;   ///< Typed array of signed 64-bit integers
   typedef TypedArrayOf<uint64_t> BigUint64Array; ///< Typed array of unsigned 64-bit integers
-#endif  // NAPI_EXPERIMENTAL
+#endif  // NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL
 
   /// Defines the signature of a N-API C++ module's registration callback (init) function.
   typedef Object (*ModuleRegisterCallback)(Env env, Object exports);
@@ -184,9 +186,9 @@ namespace Napi {
     bool IsNumber() const;      ///< Tests if a value is a JavaScript number.
 // currently experimental guard with version of NAPI_VERSION that it is
 // released in once it is no longer experimental
-#if (NAPI_VERSION > 2147483646)
+#if (NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL)
     bool IsBigInt() const;      ///< Tests if a value is a JavaScript bigint.
-#endif  // NAPI_EXPERIMENTAL
+#endif  // NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL
     bool IsString() const;      ///< Tests if a value is a JavaScript string.
     bool IsSymbol() const;      ///< Tests if a value is a JavaScript symbol.
     bool IsArray() const;       ///< Tests if a value is a JavaScript array.
@@ -258,7 +260,7 @@ namespace Napi {
 
 // currently experimental guard with version of NAPI_VERSION that it is
 // released in once it is no longer experimental
-#if (NAPI_VERSION > 2147483646)
+#if (NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL)
   /// A JavaScript bigint value.
   class BigInt : public Value {
   public:
@@ -297,7 +299,7 @@ namespace Napi {
     /// be needed to store this BigInt (i.e. the return value of `WordCount()`).
     void ToWords(int* sign_bit, size_t* word_count, uint64_t* words);
   };
-#endif  // NAPI_EXPERIMENTAL
+#endif  // NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL
 
   /// A JavaScript string or symbol value (that can be used as a property name).
   class Name : public Value {
@@ -764,10 +766,10 @@ namespace Napi {
         : std::is_same<T, double>::value ? napi_float64_array
 // currently experimental guard with version of NAPI_VERSION that it is
 // released in once it is no longer experimental
-#if (NAPI_VERSION > 2147483646)
+#if (NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL)
         : std::is_same<T, int64_t>::value ? napi_bigint64_array
         : std::is_same<T, uint64_t>::value ? napi_biguint64_array
-#endif  // NAPI_EXPERIMENTAL
+#endif  // NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL
         : unknown_array_type;
     }
     /// !endcond

@@ -1,71 +1,24 @@
 'use strict';
+const fs = require('fs');
+const path = require('path');
 
-process.config.target_defaults.default_configuration =
-  require('fs')
-    .readdirSync(require('path').join(__dirname, 'build'))
-    .filter((item) => (item === 'Debug' || item === 'Release'))[0];
+process.config.target_defaults.default_configuration = require('./build/env.json').buildType;
 
-// FIXME: We might need a way to load test modules automatically without
-// explicit declaration as follows.
-let testModules = [
-  'arraybuffer',
-  'asynccontext',
-  'asyncworker',
-  'basic_types/array',
-  'basic_types/boolean',
-  'basic_types/number',
-  'basic_types/value',
-  'bigint',
-  'buffer',
-  'callbackscope',
-  'dataview/dataview',
-  'dataview/dataview_read_write',
-  'error',
-  'external',
-  'function',
-  'handlescope',
-  'memory_management',
-  'name',
-  'object/delete_property',
-  'object/get_property',
-  'object/has_own_property',
-  'object/has_property',
-  'object/object',
-  'object/object_deprecated',
-  'object/set_property',
-  'promise',
-  'typedarray',
-  'typedarray-bigint',
-  'objectwrap',
-  'objectreference',
-  'version_management'
-];
-
-if ((process.env.npm_config_NAPI_VERSION !== undefined) &&
-    (process.env.npm_config_NAPI_VERSION < 50000)) {
-  // currently experimental only test if NAPI_VERSION
-  // is set to experimental. We can't use C max int
-  // as that is not supported as a number on earlier
-  // Node.js versions. Once bigint is in a release
-  // this should be guarded on the napi version
-  // in which bigint was added.
-  testModules.splice(testModules.indexOf('bigint'), 1);
-  testModules.splice(testModules.indexOf('typedarray-bigint'), 1);
-}
-
-if ((process.env.npm_config_NAPI_VERSION !== undefined) &&
-    (process.env.npm_config_NAPI_VERSION < 3)) {
-  testModules.splice(testModules.indexOf('callbackscope'), 1);
-  testModules.splice(testModules.indexOf('version_management'), 1);
-}
+const testSrc = path.join(__dirname, 'src');
+const testModulesRegex = /\.test\.js$/;
+const testModules = fs
+  .readdirSync(testSrc)
+  .filter(entry => testModulesRegex.test(entry))
+  .map(entry => path.join(testSrc, entry))
+;
 
 if (typeof global.gc === 'function') {
   console.log('Starting test suite\n');
 
   // Requiring each module runs tests in the module.
   testModules.forEach(name => {
-    console.log(`Running test '${name}'`);
-    require('./' + name);
+    const result = require(name);
+    console.log(`Running test '${path.basename(name)}' ${(result && result.skipped) ? '[SKIPPED]' : ''}`);
   });
 
   console.log('\nAll tests passed!');

@@ -53,8 +53,18 @@
     "url": "git://github.com/nodejs/node-addon-api.git"
   },
   "scripts": {
-    "pretest": "node-gyp rebuild -C test",
+    "clean": "cmake-js clean -d test",
+    
     "test": "node test",
+    "test:debug": "node test",
+    "test:debug:dev": "node test",
+    "test:release:dev": "node test",
+    
+    "pretest": "cmake-js rebuild -d test",
+    "pretest:debug": "cmake-js rebuild --debug -d test",
+    "pretest:release:dev": "cmake-js build -d test",
+    "pretest:debug:dev": "cmake-js build --debug -d test",
+
     "doc": "doxygen doc/Doxyfile"
   },
   "version": "1.6.2"

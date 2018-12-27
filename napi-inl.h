@@ -339,11 +339,11 @@ inline bool Value::IsNumber() const {
 
 // currently experimental guard with version of NAPI_VERSION that it is
 // released in once it is no longer experimental
-#if (NAPI_VERSION > 2147483646)
+#if (NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL)
 inline bool Value::IsBigInt() const {
   return Type() == napi_bigint;
 }
-#endif  // NAPI_EXPERIMENTAL
+#endif  // NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL
 
 inline bool Value::IsString() const {
   return Type() == napi_string;
@@ -563,7 +563,7 @@ inline double Number::DoubleValue() const {
 
 // currently experimental guard with version of NAPI_VERSION that it is
 // released in once it is no longer experimental
-#if (NAPI_VERSION > 2147483646)
+#if (NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL)
 ////////////////////////////////////////////////////////////////////////////////
 // BigInt Class
 ////////////////////////////////////////////////////////////////////////////////
@@ -624,7 +624,7 @@ inline void BigInt::ToWords(int* sign_bit, size_t* word_count, uint64_t* words) 
       _env, _value, sign_bit, word_count, words);
   NAPI_THROW_IF_FAILED_VOID(_env, status);
 }
-#endif  // NAPI_EXPERIMENTAL
+#endif  // NAPI_VERSION == NAPI_VERSION_EXPERIMENTAL
 
 ////////////////////////////////////////////////////////////////////////////////
 // Name class
